@@ -63,13 +63,14 @@ public class StationBlock extends Block implements ITE<StationTileEntity>, IWren
 			.setValue(POWERED, false));
 	}
 
-	private int getPower(Level worldIn, BlockPos pos) {
+	private boolean isPowered(Level worldIn, BlockPos pos) {
 		int power = 0;
-		for (Direction direction : Iterate.directions)
-			power = Math.max(worldIn.getSignal(pos.relative(direction), direction), power);
-		for (Direction direction : Iterate.directions)
-			power = Math.max(worldIn.getSignal(pos.relative(direction), Direction.UP), power);
-		return power;
+		for (Direction direction : Iterate.directions) {
+			if(worldIn.getSignal(pos.relative(direction), direction)>0) {
+				return true;
+			}
+		}
+		return false;
 	}
 	@Override
 	public void neighborChanged(BlockState state, Level worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
@@ -84,17 +85,19 @@ public class StationBlock extends Block implements ITE<StationTileEntity>, IWren
 	public void tick(BlockState state, ServerLevel worldIn, BlockPos pos, Random pRandom) {
 		if (worldIn.isClientSide)
 			return;
-		int power = getPower(worldIn, pos);
+		boolean isPowered = isPowered(worldIn, pos);
 
 		boolean previouslyPowered = state.getValue(POWERED);
-		if (previouslyPowered != power > 0) {
+		if (previouslyPowered != isPowered) {
 			worldIn.setBlock(pos, state.cycle(POWERED), 2);
-			if(power > 0) withTileEntityDo(worldIn, pos, te -> {
+			if(isPowered) withTileEntityDo(worldIn, pos, te -> {
 				if(te.trainCanDisassemble) {
 					GlobalStation station = te.getStation();
-					if(station==null) return;
+					if(station==null)
+						return;
 					Train train = station.getPresentTrain();
-					if(train==null) return;
+					if(train==null)
+						return;
 					train.disassemble(te.getAssemblyDirection(), te.edgePoint.getGlobalPosition().above());
 				} else {
 					te.assemble(UUID.randomUUID());
