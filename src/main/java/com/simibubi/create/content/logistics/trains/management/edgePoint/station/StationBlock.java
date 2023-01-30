@@ -64,7 +64,6 @@ public class StationBlock extends Block implements ITE<StationTileEntity>, IWren
 	}
 
 	private boolean isPowered(Level worldIn, BlockPos pos) {
-		int power = 0;
 		for (Direction direction : Iterate.directions) {
 			if(worldIn.getSignal(pos.relative(direction), direction)>0) {
 				return true;
@@ -101,6 +100,9 @@ public class StationBlock extends Block implements ITE<StationTileEntity>, IWren
 					train.disassemble(te.getAssemblyDirection(), te.edgePoint.getGlobalPosition().above());
 				} else {
 					te.assemble(UUID.randomUUID());
+					worldIn.setBlock(pos,te.getBlockState().setValue(ASSEMBLING, false),3);
+					te.refreshBlockState();
+					te.refreshAssemblyInfo();
 				}
 			});
 		}
